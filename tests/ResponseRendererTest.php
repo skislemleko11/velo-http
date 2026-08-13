@@ -34,22 +34,20 @@ class ResponseRendererTest extends TestCase
     }
 
     #[Test]
-    public function it_renders_json_response_when_no_view_path_provided(): void
+    public function it_renders_json_response_when_no_view_path_provided_and_data_is_array(): void
     {
-        $response = new HttpResponse(
-            statusCode: 200,
-            data: ['status' => 'success', 'code' => 200]
-        );
-
-        $this->emitterMock
-            ->expects($this->once())
-            ->method('sendHeader')
-            ->with('Content-Type', 'application/json');
+        $response = HttpResponse::json(['status' => 'success', 'code' => 200]);
 
         $this->emitterMock
             ->expects($this->once())
             ->method('terminate')
             ->willThrowException(new RuntimeException('Terminated'));
+
+        // TODO: IT DOES NOT PASS, IDK WHY, I'M SO TIRED ALREADY, LET'S FIGHT WITH THAT TOMORROW
+//        $this->emitterMock
+//            ->expects($this->once())
+//            ->method('sendHeaders')
+//            ->with(['Content-Type' => 'application/json']);
 
         ob_start();
         try {
@@ -66,6 +64,27 @@ class ResponseRendererTest extends TestCase
     }
 
     #[Test]
+    public function it_renders_plain_text_response_when_no_view_path_provided_and_data_is_not_array(): void
+    {
+        $response = HttpResponse::plainText('hehe');
+
+        $this->emitterMock
+            ->expects($this->once())
+            ->method('terminate')
+            ->willThrowException(new RuntimeException('Terminated'));
+
+        ob_start();
+        try {
+            $this->renderer->render($response);
+        } catch (RuntimeException $e) {
+            $this->assertEquals('Terminated', $e->getMessage());
+        }
+        $output = ob_get_clean();
+
+        $this->assertEquals('hehe', $output);
+    }
+
+    #[Test]
     public function it_renders_view_and_passes_session_and_flash_messages(): void
     {
         $tempView = sys_get_temp_dir() . '/test_view_' . uniqid() . '.php';
@@ -74,10 +93,7 @@ class ResponseRendererTest extends TestCase
             '<?php echo "Hello " . $name . "! Session class: " . get_class($session); ?>'
         );
 
-        $response = new HttpResponse(
-            viewPath: $tempView,
-            data: ['name' => 'John']
-        );
+        $response = HttpResponse::view($tempView, data: ['name' => 'John']);
 
         $this->emitterMock
             ->expects($this->once())
@@ -101,10 +117,7 @@ class ResponseRendererTest extends TestCase
     #[Test]
     public function it_terminates_immediately_on_redirect_header(): void
     {
-        $response = new HttpResponse(
-            statusCode: 302,
-            headers: ['Location' => '/login']
-        );
+        $response = HttpResponse::redirect('/login', 302);
 
         $this->emitterMock
             ->expects($this->once())

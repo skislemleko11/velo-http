@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Velo\Http;
 
+use JsonException;
 use Velo\Http\Emitter\Interfaces\EmitterInterface;
 use Velo\Session\FlashMessages\Interfaces\FlashMessagesInterface;
 use Velo\Session\Session\Interfaces\SessionInterface;
@@ -22,6 +23,8 @@ readonly class ResponseRenderer
 
     /**
      * Renders the given HttpResponse.
+     *
+     * @throws JsonException
      */
     public function render(HttpResponse $httpResponse): void
     {
@@ -65,13 +68,30 @@ readonly class ResponseRenderer
 
     /**
      * Sets headers and echos JSON response.
+     *
+     * @throws JsonException
      */
     private function echoApiResponse(HttpResponse $httpResponse): void
     {
-        $this->emitter->sendHeader('Content-Type', 'application/json');
-
-        echo json_encode($httpResponse->data);
+        if (is_array($httpResponse->data)) {
+            $this->echoJsonApiResponse($httpResponse->data);
+        } else {
+            $this->echoPlainTextResponse($httpResponse->data);
+        }
 
         $this->emitter->terminate();
+    }
+
+    /**
+     * @throws JsonException
+     */
+    private function echoJsonApiResponse(array $data): void
+    {
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
+    private function echoPlainTextResponse(string $content): void
+    {
+        echo $content;
     }
 }
