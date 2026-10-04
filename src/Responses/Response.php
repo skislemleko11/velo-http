@@ -50,10 +50,12 @@ abstract class Response
     }
 
     /**
+     * Sets a header, if it's already set, it gets replaced.
+     *
      * @param string $name Will be converted to lowercase and trimmed.
      * @param string $value Will be trimmed.
      */
-    final public function setHeader(string $name, string $value): self
+    final public function setHeader(string $name, string $value): static
     {
         $name = HeadersUtils::makeLowerCaseAndTrim($name);
         $value = trim($value);
@@ -64,10 +66,12 @@ abstract class Response
     }
 
     /**
+     * Sets headers, headers which are already set get replaced.
+     *
      * @param array<string, string> $headers Keys - headers names will be converted to lowercase and trimmed,
      * values - headers values will be trimmed.
      */
-    final public function setHeaders(array $headers): self
+    final public function setHeaders(array $headers): static
     {
         foreach ($headers as $name => $value) {
             $this->setHeader($name, $value);
@@ -82,7 +86,7 @@ abstract class Response
      * @param string $name Will be converted to lowercase and trimmed.
      * @param string $value Will be trimmed.
      */
-    final public function appendValueToHeader(string $name, string $value): self
+    final public function appendValueToHeader(string $name, string $value): static
     {
         $value = trim($value);
         $currentValue = $this->getHeader($name);
